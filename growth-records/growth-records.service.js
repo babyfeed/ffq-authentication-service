@@ -4,6 +4,7 @@ const mongo = require("mongodb");
 module.exports = {
   getParentRecords,
   createRecord,
+  getAllParentRecords,
 };
 
 async function createRecord(userId, data) {
@@ -16,7 +17,7 @@ async function createRecord(userId, data) {
     .find({ _id: o_userId })
     .toArray();
   record["parentUsername"] = parent.username;
-  record["parentId"] = o_userId
+  record["parentId"] = o_userId;
 
   const [clinic] = await db
     .collection("clinics")
@@ -31,5 +32,21 @@ async function createRecord(userId, data) {
 async function getParentRecords(userId) {
   const o_userId = new mongo.ObjectID(userId);
   const db = await getDatabaseConnection();
-  return await db.collection("growth-records").find({ parentId: o_userId }).toArray();
+  return await db
+    .collection("growth-records")
+    .find({ parentId: o_userId })
+    .sort({ clinicName: 1, parentUserame: 1 })
+    .toArray();
+}
+
+async function getAllParentRecords(userId) {
+  const o_userId = new mongo.ObjectID(userId);
+  const db = await getDatabaseConnection();
+  const [admin] = await db
+    .collection("admins")
+    .find({ _id: o_userId })
+    .toArray();
+
+  if (!admin?._id) throw new Error("Forbidden");
+  return await db.collection("growth-records").find().toArray();
 }

@@ -8,7 +8,7 @@ trigger:
 
 variables:
 
-  azureSubscription: '2ff8158d-3d56-4949-921b-c10ff2c7470b'
+  azureSubscription: '60dc4b84-1ee7-4fc6-b5bf-c8010acd0f8b'
   
   # Web app name
   webAppName: 'ffq-authentication-service'
@@ -18,6 +18,10 @@ variables:
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
+
+  resourceGroupName: 'baby_feed'
+
+  accountName: 'babyfeedweb'
 
 stages:
 - stage: Build

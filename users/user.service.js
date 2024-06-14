@@ -39,7 +39,7 @@ async function authenticate({ username, password/*, userType */}) {
         // has to be removed after the password update feature is implemented
         let match = await bcrypt.compare(password, user.userpassword) || password === user.userpassword;
         if (match) {
-            const token = jwt.sign({ sub: user.id }, config.secret);
+            const token = jwt.sign({ sub: user._id }, config.secret);
             const { userpassword, ...userWithoutPassword } = user;
             return [{
                 ...userWithoutPassword,

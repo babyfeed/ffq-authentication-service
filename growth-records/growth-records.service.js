@@ -47,7 +47,6 @@ async function getAllParentRecords(userId) {
     .collection("admins")
     .find({ _id: o_userId })
     .toArray();
-  console.log(admin, o_userId);
 
   if (!admin?._id) throw new Error("Forbidden");
   return await db.collection("growth-records").find().toArray();

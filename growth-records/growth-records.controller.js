@@ -6,6 +6,7 @@ const growthRecordsService = require("./growth-records.service");
 router.post("/", postRecord);
 router.get("/", getParentRecords);
 router.get("/admin", getAllParentRecords);
+router.get("/clinic", getAllClinicRecords);
 
 module.exports = router;
 
@@ -45,6 +46,22 @@ function getAllParentRecords(req, res, next) {
       console.log(err);
       if (err.message.includes("Forbidden"))
         return res.status(403).json({ success: false, message: "Forbidden" });
+      next(err);
+    });
+}
+
+function getAllClinicRecords(req, res, next) {
+  return growthRecordsService
+    .getAllClinicRecords(req.user.sub)
+    .then((records) => {
+      return res.status(200).json({ success: true, data: records });
+    })
+    .catch((err) => {
+      console.log(err);
+      if (err.message.includes("Forbidden"))
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      if (err.message.includes("Clinic Not Found"))
+        return res.status(404).json({ success: false, message: "Clinic not found" });
       next(err);
     });
 }

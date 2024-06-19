@@ -20,6 +20,7 @@
         "express-jwt": "^5.3.3",
         "jsonwebtoken": "^8.5.1",
         "mongoose": "^5.10.8",
+        "papaparse": "^5.4.1",
         "rootpath": "^0.1.2"
     },
     "devDependencies": {

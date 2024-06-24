@@ -1,5 +1,6 @@
 const { getDatabaseConnection } = require("../_helpers/db");
 const mongo = require("mongodb");
+const Papa = require("papaparse");
 
 module.exports = {
   getParentRecords,
@@ -8,6 +9,10 @@ module.exports = {
   createParticipantRecord,
   getAllParentRecords,
   getAllClinicRecords,
+  exportAllRecords,
+  exportClinicRecords,
+  exportParticipantRecords,
+  exportParentRecords,
 };
 
 async function createRecord(userId, data) {
@@ -21,7 +26,7 @@ async function createRecord(userId, data) {
     .toArray();
   record["parentUsername"] = parent.username;
   record["parentId"] = o_userId;
-  record["userType"] = "parent"
+  record["userType"] = "parent";
 
   const [clinic] = await db
     .collection("clinics")
@@ -44,11 +49,70 @@ async function createParticipantRecord(userId, data) {
     .toArray();
   record["participantUsername"] = participant.username;
   record["participantId"] = o_userId;
-  record["userType"] = "participant"
+  record["userType"] = "participant";
 
   return await db.collection("growth-records").insertOne(record);
 }
 
+async function exportAllRecords(userId) {
+  const records = await getAllParentRecords(userId);
+  const mappedRecords = records.map((record) => ({
+    Date: record.timestamp,
+    "User Type": record.userType === "participant" ? "Participant" : "Parent",
+    Username:
+      record.userType === "participant"
+        ? record.participantUsername
+        : record.parentUsername,
+    Clinic: record.userType === "participant" ? "-" : record.clinicName,
+    "Age (months)": record.age,
+    Gender: record.gender,
+    "Weight (kg)": record.weight,
+    "Length (cm)": record.height,
+    Percentile: record.percentile.percentile,
+  }));
+  return Papa.unparse(mappedRecords);
+}
+async function exportClinicRecords(userId) {
+  const records = await getAllClinicRecords(userId);
+  const mappedRecords = records.map((record) => ({
+    Date: record.timestamp,
+    Username:
+      record.userType === "participant"
+        ? record.participantUsername
+        : record.parentUsername,
+    Clinic: record.clinicName,
+    "Age (months)": record.age,
+    Gender: record.gender,
+    "Weight (kg)": record.weight,
+    "Length (cm)": record.height,
+    Percentile: record.percentile.percentile,
+  }));
+  return Papa.unparse(mappedRecords);
+}
+async function exportParticipantRecords(userId) {
+  const records = await getParticipantRecords(userId);
+  const mappedRecords = records.map((record) => ({
+    Date: record.timestamp,
+    Username: record.participantUsername,
+    "Age (months)": record.age,
+    Gender: record.gender,
+    "Weight (kg)": record.weight,
+    "Length (cm)": record.height,
+  }));
+  return Papa.unparse(mappedRecords);
+}
+async function exportParentRecords(userId) {
+  const records = await getParentRecords(userId);
+  const mappedRecords = records.map((record) => ({
+    Date: record.timestamp,
+    "Age (months)": record.age,
+    Gender: record.gender,
+    "Weight (kg)": record.weight,
+    "Length (cm)": record.height,
+    Percentile: record.percentile.percentile,
+  }));
+  return Papa.unparse(mappedRecords);
+}
 async function getParentRecords(userId) {
   const o_userId = new mongo.ObjectID(userId);
   const db = await getDatabaseConnection();

@@ -3,7 +3,9 @@ const mongo = require("mongodb");
 
 module.exports = {
   getParentRecords,
+  getParticipantRecords,
   createRecord,
+  createParticipantRecord,
   getAllParentRecords,
   getAllClinicRecords,
 };
@@ -19,6 +21,7 @@ async function createRecord(userId, data) {
     .toArray();
   record["parentUsername"] = parent.username;
   record["parentId"] = o_userId;
+  record["userType"] = "parent"
 
   const [clinic] = await db
     .collection("clinics")
@@ -30,6 +33,22 @@ async function createRecord(userId, data) {
   return await db.collection("growth-records").insertOne(record);
 }
 
+async function createParticipantRecord(userId, data) {
+  const o_userId = new mongo.ObjectID(userId);
+  const db = await getDatabaseConnection();
+  const record = { ...data };
+
+  const [participant] = await db
+    .collection("participants")
+    .find({ _id: o_userId })
+    .toArray();
+  record["participantUsername"] = participant.username;
+  record["participantId"] = o_userId;
+  record["userType"] = "participant"
+
+  return await db.collection("growth-records").insertOne(record);
+}
+
 async function getParentRecords(userId) {
   const o_userId = new mongo.ObjectID(userId);
   const db = await getDatabaseConnection();
@@ -37,6 +56,15 @@ async function getParentRecords(userId) {
     .collection("growth-records")
     .find({ parentId: o_userId })
     .sort({ clinicName: 1, parentUserame: 1 })
+    .toArray();
+}
+async function getParticipantRecords(userId) {
+  const o_userId = new mongo.ObjectID(userId);
+  const db = await getDatabaseConnection();
+  return await db
+    .collection("growth-records")
+    .find({ participantId: o_userId })
+    .sort({ participantUsername: 1 })
     .toArray();
 }
 

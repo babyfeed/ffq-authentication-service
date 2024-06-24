@@ -76,10 +76,7 @@ async function exportClinicRecords(userId) {
   const records = await getAllClinicRecords(userId);
   const mappedRecords = records.map((record) => ({
     Date: record.timestamp,
-    Username:
-      record.userType === "participant"
-        ? record.participantUsername
-        : record.parentUsername,
+    Username: record.parentUsername,
     Clinic: record.clinicName,
     "Age (months)": record.age,
     Gender: record.gender,
@@ -93,7 +90,6 @@ async function exportParticipantRecords(userId) {
   const records = await getParticipantRecords(userId);
   const mappedRecords = records.map((record) => ({
     Date: record.timestamp,
-    Username: record.participantUsername,
     "Age (months)": record.age,
     Gender: record.gender,
     "Weight (kg)": record.weight,

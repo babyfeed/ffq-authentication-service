@@ -11,8 +11,6 @@ module.exports = {
   getAllClinicRecords,
   exportAllRecords,
   exportClinicRecords,
-  exportParticipantRecords,
-  exportParentRecords,
 };
 
 async function createRecord(userId, data) {
@@ -78,29 +76,6 @@ async function exportClinicRecords(userId) {
     Date: record.timestamp,
     Username: record.parentUsername,
     Clinic: record.clinicName,
-    "Age (months)": record.age,
-    Gender: record.gender,
-    "Weight (kg)": record.weight,
-    "Length (cm)": record.height,
-    Percentile: record.percentile.percentile,
-  }));
-  return Papa.unparse(mappedRecords);
-}
-async function exportParticipantRecords(userId) {
-  const records = await getParticipantRecords(userId);
-  const mappedRecords = records.map((record) => ({
-    Date: record.timestamp,
-    "Age (months)": record.age,
-    Gender: record.gender,
-    "Weight (kg)": record.weight,
-    "Length (cm)": record.height,
-  }));
-  return Papa.unparse(mappedRecords);
-}
-async function exportParentRecords(userId) {
-  const records = await getParentRecords(userId);
-  const mappedRecords = records.map((record) => ({
-    Date: record.timestamp,
     "Age (months)": record.age,
     Gender: record.gender,
     "Weight (kg)": record.weight,

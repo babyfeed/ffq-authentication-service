@@ -70,8 +70,6 @@ function getParticipantRecords(req, res, next) {
 const EXPORT_SERVICES = {
   admin: growthRecordsService.exportAllRecords,
   clinic: growthRecordsService.exportClinicRecords,
-  participant: growthRecordsService.exportParticipantRecords,
-  parent: growthRecordsService.exportParentRecords
 }
 async function exportApi(req, res, next) {
   try {

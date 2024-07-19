@@ -1,6 +1,6 @@
 const { getDatabaseConnection } = require("../_helpers/db");
 const mongo = require("mongodb");
-const Papa = require("papaparse");
+const xlsx = require("json-as-xlsx");
 
 module.exports = {
   getParentRecords,
@@ -52,37 +52,50 @@ async function createParticipantRecord(userId, data) {
   return await db.collection("growth-records").insertOne(record);
 }
 
-async function exportAllRecords(userId) {
-  const records = await getAllParentRecords(userId);
+function exportRecords(records) {
   const mappedRecords = records.map((record) => ({
-    Date: record.timestamp,
-    "User Type": record.userType === "participant" ? "Participant" : "Parent",
-    Username:
-      record.userType === "participant"
-        ? record.participantUsername
-        : record.parentUsername,
-    Clinic: record.userType === "participant" ? "-" : record.clinicName,
+    Date: record.timestamp.slice(0, 10),
+    Username: String(
+      record.userType === "participant" ? record.participantUsername : record.parentUsername
+    ),
     "Age (months)": record.age,
     Gender: record.gender,
     "Weight (kg)": record.weight,
     "Length (cm)": record.height,
     Percentile: record.percentile.percentile,
   }));
-  return Papa.unparse(mappedRecords);
+
+  const data = [
+    {
+      sheet: "Sheet 1",
+      columns: [
+        { label: "Date", value: "Date" },
+        { label: "Username", value: "Username" },
+        { label: "Age (months)", value: "Age (months)" },
+        { label: "Gender", value: "Gender" },
+        { label: "Weight (kg)", value: "Weight (kg)" },
+        { label: "Length (cm)", value: "Length (cm)" },
+        { label: "Percentile", value: "Percentile" },
+      ],
+      content: mappedRecords,
+    },
+  ];
+  const settings = {
+    writeOptions: {
+      type: "buffer",
+      bookType: "xlsx",
+    },
+  };
+
+  return xlsx(data, settings);
+}
+async function exportAllRecords(userId) {
+  const records = await getAllParentRecords(userId);
+  return exportRecords(records);
 }
 async function exportClinicRecords(userId) {
   const records = await getAllClinicRecords(userId);
-  const mappedRecords = records.map((record) => ({
-    Date: record.timestamp,
-    Username: record.parentUsername,
-    Clinic: record.clinicName,
-    "Age (months)": record.age,
-    Gender: record.gender,
-    "Weight (kg)": record.weight,
-    "Length (cm)": record.height,
-    Percentile: record.percentile.percentile,
-  }));
-  return Papa.unparse(mappedRecords);
+  return exportRecords(records);
 }
 async function getParentRecords(userId) {
   const o_userId = new mongo.ObjectID(userId);
@@ -90,7 +103,7 @@ async function getParentRecords(userId) {
   return await db
     .collection("growth-records")
     .find({ parentId: o_userId })
-    .sort({ clinicName: 1, parentUserame: 1 })
+    .sort({ timestamp: -1 })
     .toArray();
 }
 async function getParticipantRecords(userId) {
@@ -99,8 +112,12 @@ async function getParticipantRecords(userId) {
   return await db
     .collection("growth-records")
     .find({ participantId: o_userId })
-    .sort({ participantUsername: 1 })
+    .sort({ timestamp: -1 })
     .toArray();
+}
+
+function trimTimestamps(records) {
+  return records.map((x) => ({ ...x, timestamp: x.timestamp.slice(0, 10) }));
 }
 
 async function getAllParentRecords(userId) {
@@ -112,7 +129,13 @@ async function getAllParentRecords(userId) {
     .toArray();
 
   if (!admin?._id) throw new Error("Forbidden");
-  return await db.collection("growth-records").find().toArray();
+  return trimTimestamps(
+    await db
+      .collection("growth-records")
+      .find()
+      .sort({ timestamp: -1 })
+      .toArray()
+  );
 }
 
 async function getAllClinicRecords(userId) {
@@ -134,8 +157,11 @@ async function getAllClinicRecords(userId) {
   if (!clinic?._id) throw new Error("Clinic Not Found");
 
   const o_clinicId = new mongo.ObjectID(clinic._id);
-  return await db
-    .collection("growth-records")
-    .find({ clinicId: o_clinicId })
-    .toArray();
+  return trimTimestamps(
+    await db
+      .collection("growth-records")
+      .find({ clinicId: o_clinicId })
+      .sort({ timestamp: -1 })
+      .toArray()
+  );
 }

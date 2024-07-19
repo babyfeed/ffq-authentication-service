@@ -1,11 +1,18 @@
 const mongo = require("mongodb");
-const Papa = require("papaparse");
+const xlsx = require("json-as-xlsx");
 const { getDatabaseConnection } = require("../_helpers/db");
 
 module.exports = {
   getAllEvents,
   createParentEvent,
   exportEvents,
+};
+
+const getDate = (timestamp) => {
+  const year = timestamp.getFullYear();
+  const month = String(timestamp.getMonth() + 1).padStart(2, "0");
+  const day = String(timestamp.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 async function exportEvents(userId) {
@@ -22,13 +29,35 @@ async function exportEvents(userId) {
     .sort({ timestamp: 1 })
     .toArray();
   const mappedEvents = events.map((event) => ({
-    Date: event.timestamp,
+    Date: getDate(event.timestamp),
     Username: event.parentUsername,
-    Category: event.category,
-    Title: event.title,
-    "Resource URL:": event.properties.url,
+    Resource: event.title,
   }));
-  return Papa.unparse(mappedEvents);
+  const data = [
+    {
+      sheet: "Sheet 1",
+      columns: [
+        { label: "Date", value: "Date" },
+        { label: "Username", value: "Username" },
+        { label: "Resource", value: "Resource" },
+      ],
+      content: mappedEvents,
+    },
+  ];
+  const settings = {
+    writeOptions: {
+      type: "buffer",
+      bookType: "xlsx",
+    },
+  };
+  return xlsx(data, settings);
+}
+
+function trimTimestamps(records) {
+  return records.map((x) => ({
+    ...x,
+    timestamp: getDate(x.timestamp),
+  }));
 }
 
 async function getAllEvents(userId) {
@@ -39,11 +68,13 @@ async function getAllEvents(userId) {
     .find({ _id: o_userId })
     .toArray();
   if (!admin?._id) throw new Error("Forbidden");
-  return await db
-    .collection("parent-events")
-    .find({ name: "external-resource-click" })
-    .sort({ timestamp: 1 })
-    .toArray();
+  return trimTimestamps(
+    await db
+      .collection("parent-events")
+      .find({ name: "external-resource-click" })
+      .sort({ timestamp: -1 })
+      .toArray()
+  );
 }
 
 async function createParentEvent(userId, data) {

@@ -78,7 +78,7 @@ async function exportApi(req, res, next) {
     const service = EXPORT_SERVICES?.[type] ?? null
     if(!service) return res.status(400).json({ success: false, message: "Invalid type" });
     const result = await service(req.user.sub);
-    const filename = `growth_records_${userId}.csv`;
+    const filename = `growth_records_${userId}.xlsx`;
     const filepath = path.join(__dirname, filename);
 
     fs.writeFileSync(filepath, result);

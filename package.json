@@ -23,6 +23,7 @@
         "jsonwebtoken": "^8.5.1",
         "mongoose": "^5.10.8",
         "papaparse": "^5.4.1",
+        "path": "^0.12.7",
         "rootpath": "^0.1.2"
     },
     "devDependencies": {

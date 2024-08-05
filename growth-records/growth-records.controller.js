@@ -11,17 +11,22 @@ router.get("/participant", getParticipantRecords);
 router.post("/participant", postParticipantRecord);
 router.get("/admin", getAllRecords);
 router.get("/clinic", getAllClinicRecords);
-router.get('/export/:type', exportApi)
+router.get("/export/:type", exportApi);
+router.get("/update-percentiles", updatePercentiles);
 
 module.exports = router;
+
+function updatePercentiles(req, res, next) {
+  growthRecordsService.updatePercentiles().then(() => {
+    return res.status(200).json({ success: true });
+  });
+}
 
 function postRecord(req, res, next) {
   return growthRecordsService
     .createRecord(req.user.sub, req.body)
     .then((data) => {
-      return res
-        .status(201)
-        .json({ success: true, insertedId: data.insertedId });
+      return res.status(201).json({ success: true, data });
     })
     .catch((err) => {
       console.log(err);
@@ -32,9 +37,7 @@ function postParticipantRecord(req, res, next) {
   return growthRecordsService
     .createParticipantRecord(req.user.sub, req.body)
     .then((data) => {
-      return res
-        .status(201)
-        .json({ success: true, insertedId: data.insertedId });
+      return res.status(201).json({ success: true, data });
     })
     .catch((err) => {
       console.log(err);
@@ -66,17 +69,17 @@ function getParticipantRecords(req, res, next) {
     });
 }
 
-
 const EXPORT_SERVICES = {
   admin: growthRecordsService.exportAllRecords,
   clinic: growthRecordsService.exportClinicRecords,
-}
+};
 async function exportApi(req, res, next) {
   try {
     const userId = req.user.sub;
-    const type = req.params.type
-    const service = EXPORT_SERVICES?.[type] ?? null
-    if(!service) return res.status(400).json({ success: false, message: "Invalid type" });
+    const type = req.params.type;
+    const service = EXPORT_SERVICES?.[type] ?? null;
+    if (!service)
+      return res.status(400).json({ success: false, message: "Invalid type" });
     const result = await service(req.user.sub);
     const filename = `growth_records_${userId}.xlsx`;
     const filepath = path.join(__dirname, filename);
@@ -124,7 +127,9 @@ function getAllClinicRecords(req, res, next) {
       if (err.message.includes("Forbidden"))
         return res.status(403).json({ success: false, message: "Forbidden" });
       if (err.message.includes("Clinic Not Found"))
-        return res.status(404).json({ success: false, message: "Clinic not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Clinic not found" });
       next(err);
     });
 }

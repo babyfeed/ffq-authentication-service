@@ -17,6 +17,7 @@ async function authenticate({ username, password/*, userType */}) {
     const dbo = db.db("ffq_database");
     var query = { username: username };
     var user = await dbo.collection("admins").find(query).toArray();
+    let viewConfiguration = null
     if(!Object.keys(user).length){
         user = await dbo.collection("clinicians").find(query).toArray();
     }
@@ -25,9 +26,21 @@ async function authenticate({ username, password/*, userType */}) {
     }
     if (!Object.keys(user).length) {
         user = await dbo.collection("researchers").find(query).toArray();
+        const institutionId = user[0]?.assignedResearchInstitutionId;
+        if(institutionId) {
+            [viewConfiguration] = await dbo.collection("view-configurations").find({
+                institutionId: institutionId
+            }).toArray();
+        }
     }
     if (!Object.keys(user).length) {
         user = await dbo.collection("participants").find(query).toArray();
+        const institutionId = user[0]?.assignedResearcherInst;
+        if(institutionId) {
+            [viewConfiguration] = await dbo.collection("view-configurations").find({
+                institutionId: institutionId
+            }).toArray();
+        }
     }
 
     const bcrypt = require('bcrypt');
@@ -40,6 +53,9 @@ async function authenticate({ username, password/*, userType */}) {
         let match = await bcrypt.compare(password, user.userpassword) || password === user.userpassword;
         if (match) {
             const token = jwt.sign({ sub: user._id }, config.secret);
+            if(viewConfiguration) {
+                user.viewConfiguration = viewConfiguration;
+            }
             const { userpassword, ...userWithoutPassword } = user;
             return [{
                 ...userWithoutPassword,

@@ -17,6 +17,7 @@ app.use(jwt());
 app.use('/users', require('./users/users.controller'));
 app.use('/growth-records', require('./growth-records/growth-records.controller'));
 app.use('/parent-events', require('./parent-events/parent-events.controller'));
+app.use('/view-configurations', require('./view-configurations/view-configurations.controller'));
 
 // global error handler
 app.use(errorHandler);
